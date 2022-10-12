@@ -1,6 +1,6 @@
-use std::{net::SocketAddr, collections::HashMap, sync::{Mutex, Arc}};
+use std::{collections::HashMap, sync::{Mutex, Arc}};
 
-use tokio::{net::TcpListener, sync::broadcast::{self, Sender}, io::{BufReader, AsyncBufReadExt, AsyncWriteExt}};
+use tokio::{net::TcpListener, io::{BufReader, AsyncBufReadExt, AsyncWriteExt}};
 
 type Db = Arc<Mutex<HashMap<String, String>>>;
 
@@ -9,17 +9,12 @@ async fn main() {
     println!("Starting inmemodb on 0.0.0.0:3000");
 
     let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    let tx:Sender<(String, SocketAddr)>;
-    (tx, _) = broadcast::channel(10);
     let db:Db = Arc::new(Mutex::new(HashMap::new()));
 
 
     loop {
 
         let (mut socket, addr) = listener.accept().await.unwrap();
-        let tx = tx.clone();
-        let mut rx = tx.subscribe();
-
         let db = db.clone();
 
         tokio::spawn(async move {
@@ -69,10 +64,6 @@ async fn main() {
                             let resp = format!("{}\n", response);
                             writer.write_all(resp.as_bytes()).await.unwrap();
                         }
-                    },
-
-                    result = rx.recv() => {
-                        let (_msg, _an_addr) = result.unwrap();
                     }
                 }
                 line.clear();
