@@ -40,28 +40,28 @@ async fn main() {
                         let response = match cmd[0].as_str() {
                             "QUIT" => {
                                 writer.shutdown().await.unwrap();
-                                "CLOSED".to_string()
+                                ("".to_string(), false)
                             },
                             "GET" => {
                                 let db = db.lock().unwrap();
                                 if let Some(v) = db.get(&cmd[1]) {
-                                    format!("OK {}", v.clone())
+                                    (format!("OK {}", v.clone()), true)
                                 } else {
-                                    "OK".to_string()
+                                    ("OK".to_string(), true)
                                 }
                             },
                             "SET" => {
                                 let mut db = db.lock().unwrap();
                                 let c = cmd[2..cmd.len()].join(" ");
                                 db.insert(cmd[1].clone(), c);
-                                "OK".to_string()
+                                ("OK".to_string(), true)
                             },
                             _ => {
-                                "unimplemented".to_string()
+                                ("unimplemented".to_string(), true)
                             }
                         };
-                        if response != "CLOSED" {
-                            let resp = format!("{}\n", response);
+                        if response.1 {
+                            let resp = format!("{}\n", response.0);
                             writer.write_all(resp.as_bytes()).await.unwrap();
                         }
                     }
